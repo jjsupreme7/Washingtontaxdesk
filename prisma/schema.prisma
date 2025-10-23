@@ -1,0 +1,134 @@
+// Prisma Schema for WashingtonTaxDesk.com
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with role-based access
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          UserRole  @default(INDIVIDUAL)
+  organization  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  documents     Document[]
+  chatSessions  ChatSession[]
+  firmProfile   FirmProfile?
+  
+  @@index([email])
+}
+
+enum UserRole {
+  INDIVIDUAL
+  SMALL_BUSINESS
+  ENTERPRISE
+  ACCOUNTING_FIRM
+  LAW_FIRM
+  ADMIN
+}
+
+// Firm-specific profile for accounting/law firms
+model FirmProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firmName        String
+  firmType        String   // "ACCOUNTING" or "LAW"
+  licenseNumber   String?
+  teamSize        Int?
+  clientCount     Int?
+  specializations String[] // Array of specialization areas
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Team members for multi-user access
+  teamMembers     TeamMember[]
+}
+
+// Team members for firm accounts
+model TeamMember {
+  id            String      @id @default(cuid())
+  firmProfileId String
+  firmProfile   FirmProfile @relation(fields: [firmProfileId], references: [id], onDelete: Cascade)
+  email         String
+  name          String
+  role          String      // "ADMIN", "MEMBER", "VIEWER"
+  permissions   String[]    // Array of permission strings
+  createdAt     DateTime    @default(now())
+  
+  @@unique([firmProfileId, email])
+}
+
+// Document storage and tracking
+model Document {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileType    String
+  fileSize    Int
+  filePath    String
+  status      String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, ERROR
+  analysis    Json?    // Store AI analysis results
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+
+// Chat session tracking
+model ChatSession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  botType     String   // "CLAUDE" or "CUSTOMGPT"
+  messages    Json     // Store conversation history
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Resource library items
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String
+  targetRole  UserRole[]
+  content     String   @db.Text
+  fileUrl     String?
+  tags        String[]
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([category])
+  @@index([createdAt])
+}
+
+// Audit trail for enterprise compliance
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String
+  resource    String?
+  details     Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+}
