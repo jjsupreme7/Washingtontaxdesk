@@ -6,9 +6,6 @@ import { claudeService } from '@/lib/claude-service';
 import { customGPTService } from '@/lib/customgpt-service';
 import { documentProcessor } from '@/lib/document-processor';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -102,9 +99,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Document upload error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to process documents',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );
