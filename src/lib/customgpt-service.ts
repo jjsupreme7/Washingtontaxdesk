@@ -6,10 +6,12 @@ interface CustomGPTMessage {
 }
 
 export class CustomGPTService {
+  private projectId: string;
   private apiKey: string;
   private baseUrl: string = 'https://app.customgpt.ai/api/v1';
 
   constructor() {
+    this.projectId = process.env.CUSTOMGPT_PROJECT_ID || '';
     this.apiKey = process.env.CUSTOMGPT_API_KEY || '';
   }
 
@@ -24,16 +26,13 @@ export class CustomGPTService {
       // Extract the latest user message
       const latestMessage = messages[messages.length - 1]?.content || '';
 
-      // Parse the API key to get project ID (format: projectId|apiKey)
-      const [projectId, apiToken] = this.apiKey.split('|');
-
-      if (!projectId || !apiToken) {
-        throw new Error('Invalid CustomGPT API key format. Expected format: projectId|apiKey');
+      if (!this.projectId || !this.apiKey) {
+        throw new Error('CustomGPT project ID and API key are required');
       }
 
-      // CustomGPT API endpoint for sending messages
-      const response = await axios.post(
-        `${this.baseUrl}/projects/${projectId}/conversations/send`,
+      // CustomGPT API endpoint for sending messages (use PUT method)
+      const response = await axios.put(
+        `${this.baseUrl}/projects/${this.projectId}/conversations/send`,
         {
           prompt: latestMessage,
           session_id: sessionId || undefined,
@@ -41,7 +40,7 @@ export class CustomGPTService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${apiToken}`,
+            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
           timeout: 30000,
