@@ -6,11 +6,8 @@ import { claudeService } from '@/lib/claude-service';
 import { customGPTService } from '@/lib/customgpt-service';
 import { documentProcessor } from '@/lib/document-processor';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
