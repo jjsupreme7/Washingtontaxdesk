@@ -24,16 +24,24 @@ export class CustomGPTService {
       // Extract the latest user message
       const latestMessage = messages[messages.length - 1]?.content || '';
 
-      // CustomGPT API endpoint for conversations
+      // Parse the API key to get project ID (format: projectId|apiKey)
+      const [projectId, apiToken] = this.apiKey.split('|');
+
+      if (!projectId || !apiToken) {
+        throw new Error('Invalid CustomGPT API key format. Expected format: projectId|apiKey');
+      }
+
+      // CustomGPT API endpoint for sending messages
       const response = await axios.post(
-        `${this.baseUrl}/conversations`,
+        `${this.baseUrl}/projects/${projectId}/conversations/send`,
         {
           prompt: latestMessage,
           session_id: sessionId || undefined,
+          response_source: 'default',
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'Authorization': `Bearer ${apiToken}`,
             'Content-Type': 'application/json',
           },
           timeout: 30000,
@@ -41,16 +49,16 @@ export class CustomGPTService {
       );
 
       return {
-        response: response.data.data?.response || response.data.response || 'No response received',
-        sessionId: response.data.data?.session_id || response.data.session_id || sessionId || '',
+        response: response.data.data?.openai_response || response.data.data?.response || response.data.response || 'No response received',
+        sessionId: response.data.data?.session_id || response.data.session_id || sessionId || `session-${Date.now()}`,
       };
     } catch (error: any) {
       console.error('CustomGPT API error:', error.response?.data || error.message);
-      
+
       // Provide fallback response
       return {
         response: 'I apologize, but I\'m having trouble connecting to the specialized tax assistant. Please try again or use the Claude AI assistant.',
-        sessionId: sessionId || '',
+        sessionId: sessionId || `session-${Date.now()}`,
       };
     }
   }
