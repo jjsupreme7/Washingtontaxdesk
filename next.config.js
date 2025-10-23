@@ -11,6 +11,17 @@ const nextConfig = {
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
+  webpack: (config, { isServer }) => {
+    // Fix for canvas dependency (used by pdf-parse)
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'canvas': 'commonjs canvas',
+      });
+    }
+
+    return config;
+  },
 }
 
 module.exports = nextConfig

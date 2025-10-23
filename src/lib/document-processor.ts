@@ -1,7 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import pdfParse from 'pdf-parse';
-import mammoth from 'mammoth';
 
 export class DocumentProcessor {
   /**
@@ -9,6 +7,8 @@ export class DocumentProcessor {
    */
   async extractPDFText(filePath: string): Promise<string> {
     try {
+      // Dynamic import to avoid build-time issues
+      const pdfParse = (await import('pdf-parse')).default;
       const dataBuffer = fs.readFileSync(filePath);
       const data = await pdfParse(dataBuffer);
       return data.text;
@@ -23,6 +23,8 @@ export class DocumentProcessor {
    */
   async extractWordText(filePath: string): Promise<string> {
     try {
+      // Dynamic import to avoid build-time issues
+      const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ path: filePath });
       return result.value;
     } catch (error) {
